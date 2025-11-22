@@ -1,7 +1,7 @@
 import { contract } from "../contract.js";
 import { ethers } from "ethers";
 
-const hash = "ad03103be790fddccca1e817c537fbede59a0d17668e49cf789e64f882413043";
+const hash = "98e68a1640fb4f3f64f5be0dc41797ee182c784516b0fcb3d980827a30dc93ed";
 
 const padded = ethers.zeroPadValue("0x" + hash, 32);
 

@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
-import { SignJWT } from "jose";
 import { contract } from "./contract.js";
 import { issuerAddress, issuerPrivateKey } from "./keys.js";
 import { ethers } from "ethers";
 
+import dotenv from 'dotenv'
+dotenv.config()
 
 // RUN AT SERVER START
 async function initializeIssuer() {
@@ -30,6 +31,17 @@ async function initializeIssuer() {
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+app.use((req, res, next) => {
+  const key = req.headers["x-admin-key"];
+  if (key != process.env.ISSUER_ADMIN_KEY) {
+    return res.status(403).json({ error: "FORBIDDEN" });
+  }
+  next();
+});
+
+
+const PORT = process.env.PORT || 5001;
 
 
 app.post("/issue", async (req, res) => {
@@ -113,8 +125,8 @@ async function start() {
     await initializeIssuer();
     console.log("Issuer service initialized");
 
-    app.listen(5001, () => {
-      console.log("Issuer service running on port 5001");
+    app.listen(PORT, () => {
+      console.log(`Issuer service running on port ${PORT}`);
     });
   } catch (err) {
     console.error("Error during startup:", err);
