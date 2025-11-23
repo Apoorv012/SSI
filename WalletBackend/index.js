@@ -100,7 +100,7 @@ app.post("/store-credential", async (req, res) => {
 
     // 4) Finally, store the credential locally in wallet backend storage
     storage.credentials[credentialHash] = {
-      vc,
+      ...vc,
       storedAt: new Date().toISOString(),
     };
 
@@ -129,32 +129,34 @@ app.get("/credentials", (req, res) => {
 
 /**
  * POST /request-proof
- * Verifier calls this to request attributes.
- * Body: { verifierId: "Bank-123", attributes: ["over18","panLast4"], credentialHash }
- * Returns requestId
+ * Body: {
+ *   verifierId: "BankXYZ",
+ *   attributes: ["over18", "panLast4"],
+ *   issuerPublicKey: "0x123..."   // optional
+ * }
  */
 app.post("/request-proof", (req, res) => {
-  const { verifierId, attributes, credentialHash } = req.body;
-  if (!verifierId || !Array.isArray(attributes) || !credentialHash) {
-    return res.status(400).json({ error: "Missing fields (verifierId, attributes, credentialHash)" });
+  const { verifierId, attributes, issuerPublicKey } = req.body;
+
+  if (!verifierId || !Array.isArray(attributes)) {
+    return res.status(400).json({ error: "Missing verifierId or attributes" });
   }
-  // ensure credential exists
-  if (!storage.credentials[credentialHash]) {
-    return res.status(404).json({ error: "Credential not found in wallet" });
-  }
+
   const requestId = uuidv4();
+
   storage.requests[requestId] = {
     id: requestId,
     verifierId,
     attributes,
-    credentialHash,
+    issuerPublicKey: issuerPublicKey || null,    // optional filter
     status: "pending",
     createdAt: new Date().toISOString(),
   };
+
   saveStorage();
-  // In a real system you would push a websocket/notification to wallet UI.
   return res.json({ ok: true, requestId });
 });
+
 
 /**
  * GET /pending-requests
@@ -165,112 +167,37 @@ app.get("/pending-requests", (req, res) => {
   return res.json(list);
 });
 
+
 /**
- * POST /respond
- * Body: { requestId, approve: true/false }
- * If approved: create VP, sign it with backend key, return VP object.
+ * Select a credential capable of fulfilling the request
+ * (with optional issuer filter)
  */
-app.post("/respond", async (req, res) => {
-  try {
-    const { requestId, approve } = req.body;
-    if (!requestId || typeof approve !== "boolean") {
-      return res.status(400).json({ error: "Missing requestId or approve (boolean)" });
-    }
-    const reqObj = storage.requests[requestId];
-    if (!reqObj) return res.status(404).json({ error: "Request not found" });
-    if (reqObj.status !== "pending") return res.status(400).json({ error: "Request already handled" });
+function findMatchingCredential(attributes, issuerFilter) {
+  const allCreds = Object.values(storage.credentials);
 
-    if (!approve) {
-      reqObj.status = "rejected";
-      reqObj.resolvedAt = new Date().toISOString();
-      saveStorage();
-      return res.json({ ok: true, message: "Request rejected" });
+  for (const cred of allCreds) {
+    // 1) issuer filter
+    if (issuerFilter && cred.issuerPublicKey !== issuerFilter) {
+      continue;
     }
 
-    // APPROVAL FLOW:
-    const credentialHash = reqObj.credentialHash;
-    const stored = storage.credentials[credentialHash];
-    if (!stored) return res.status(404).json({ error: "Credential not found" });
-
-    const vc = stored.vc; // this is the object issued by Issuer
-
-    // Validate issuer and credential on-chain BEFORE creating VP
-    const padded = ethers.zeroPadValue("0x" + vc.credentialHash, 32);
-    const issuerAddress = vc.issuerPublicKey; // the issuer address stored in VC
-
-    // 1) is issuer trusted?
-    const isTrusted = await contract.isIssuerTrusted(issuerAddress);
-    if (!isTrusted) {
-      return res.status(400).json({ error: "Issuer not trusted on chain" });
-    }
-    // 2) is credential issued?
-    const isIssued = await contract.isCredentialIssued(padded);
-    if (!isIssued) {
-      return res.status(400).json({ error: "Credential not recorded as issued on chain" });
-    }
-    // 3) is credential revoked?
-    const isRevoked = await contract.isCredentialRevoked(padded);
-    if (isRevoked) {
-      return res.status(400).json({ error: "Credential has been revoked" });
-    }
-
-    // Derive requested attributes from the stored VC
-    const derived = {};
-    for (const attr of reqObj.attributes) {
-      if (attr === "over18") {
-        const dob = vc.vc.dob; // format YYYY-MM-DD
-        const age = computeAge(dob);
-        derived.over18 = age >= 18;
-      } else if (attr === "panLast4") {
-        const pan = vc.vc.pan || "";
-        derived.panLast4 = pan.slice(-4);
-      } else if (attr === "name") {
-        derived.name = vc.vc.name;
-      } else {
-        // unsupported attribute -> include raw if present (for POC)
-        derived[attr] = vc.vc[attr];
+    // 2) check if credential contains all required fields
+    let ok = true;
+    for (const attr of attributes) {
+      if (attr === "over18" && cred.vc["dob"] !== undefined) continue; // derived
+      if (attr === "panLast4" && cred.vc["pan"] !== undefined) continue; // derived
+      if (cred.vc[attr] === undefined) {
+        ok = false;
+        break;
       }
     }
 
-    // Create VP (Verifiable Presentation)
-    const vpPayload = {
-      vp: derived,
-      credentialHash: vc.credentialHash,
-      issuerPublicKey: issuerAddress,
-      issuerSignature: vc.issuerSignature,
-      backend: {
-        address: walletData.address,
-        timestamp: new Date().toISOString(),
-      },
-      requestId: requestId,
-      verifierId: reqObj.verifierId
-    };
-
-    // Sign VP with backend wallet private key (Ethereum style)
-    const wallet = new ethers.Wallet(walletData.privateKey);
-    // We sign the canonical JSON string
-    const vpString = JSON.stringify(vpPayload);
-    const backendSignature = await wallet.signMessage(vpString);
-
-    const VP = {
-      ...vpPayload,
-      backendSignature
-    };
-
-    // mark request as completed and store VP for audit
-    reqObj.status = "approved";
-    reqObj.resolvedAt = new Date().toISOString();
-    reqObj.vp = VP;
-    saveStorage();
-
-    // Return VP to verifier (in real flow you may POST to verifier callback)
-    return res.json({ ok: true, vp: VP });
-
-  } catch (err) {
-    console.error("Respond error:", err);
-    return res.status(500).json({ error: "Failed to respond to request" });
+    if (ok) return cred;
   }
-});
+
+  return null;
+}
+
 
 // utility: compute age from YYYY-MM-DD
 function computeAge(dobStr) {
@@ -284,6 +211,140 @@ function computeAge(dobStr) {
     return null;
   }
 }
+
+/**
+ * POST /respond
+ * Body: { requestId, approve: true/false }
+ * If approved: auto-select a credential, validate on-chain, derive attributes,
+ * create VP, sign it, and return it.
+ */
+app.post("/respond", async (req, res) => {
+  try {
+    const { requestId, approve } = req.body;
+
+    if (!requestId || typeof approve !== "boolean") {
+      return res.status(400).json({ error: "Missing requestId or approve (boolean)" });
+    }
+
+    const reqObj = storage.requests[requestId];
+    if (!reqObj) return res.status(404).json({ error: "Request with the given requestId not found" });
+
+    if (reqObj.status !== "pending") {
+      return res.status(400).json({ 
+        error: "Request already handled",
+        status: reqObj.status
+      });
+    }
+
+    // === CASE: User Rejects ===
+    if (!approve) {
+      reqObj.status = "rejected";
+      reqObj.resolvedAt = new Date().toISOString();
+      saveStorage();
+      return res.json({ ok: true, message: "Request rejected" });
+    }
+
+    // === CASE: User Approves ===
+    const { attributes, issuerPublicKey } = reqObj;
+
+    // AUTO-SELECT CREDENTIAL
+    const selectedVC = findMatchingCredential(attributes, issuerPublicKey);
+
+    if (!selectedVC) {
+      return res.status(400).json({
+        error: "No credential in wallet can fulfill the requested attributes",
+      });
+    }
+
+    const vc = selectedVC;  // actual VC object
+    const credentialHash = vc.credentialHash;
+    const issuerAddress = vc.issuerPublicKey;
+
+    // VALIDATE ON-CHAIN BEFORE CREATING VP
+    const padded = ethers.zeroPadValue("0x" + credentialHash, 32);
+
+    // is issuer trusted?
+    const trusted = await contract.isIssuerTrusted(issuerAddress);
+    if (!trusted) {
+      return res.status(400).json({ error: "Issuer is NOT trusted on-chain" });
+    }
+
+    // is credential issued?
+    const issued = await contract.isCredentialIssued(padded);
+    if (!issued) {
+      return res.status(400).json({ 
+        error: "Credential hash not found on blockchain (not issued)" 
+      });
+    }
+
+    // is credential revoked?
+    const revoked = await contract.isCredentialRevoked(padded);
+    if (revoked) {
+      return res.status(400).json({ error: "Credential is revoked" });
+    }
+
+    // DERIVE REQUESTED ATTRIBUTES
+    const derived = {};
+    for (const attr of attributes) {
+      if (attr === "over18") {
+        const dob = vc.vc.dob;
+        const age = computeAge(dob);
+        console.log(`Computed Age: ${age}`)
+        derived.over18 = age >= 18;
+      } 
+      else if (attr === "panLast4") {
+        const pan = vc.vc.pan || "";
+        derived.panLast4 = pan.slice(-4);
+      }
+      else if (attr in vc.vc) {
+        derived[attr] = vc.vc[attr];
+      }
+      else {
+        return res.status(400).json({ 
+          error: `Attribute '${attr}' cannot be derived from selected credential`
+        });
+      }
+    }
+
+    // CREATE V.P. PAYLOAD
+    const vpPayload = {
+      vp: derived,
+      credentialHash, // credentialHash of the original document
+      issuerPublicKey: issuerAddress, // issuer of the original document
+      issuerSignature: vc.issuerSignature,
+      backend: {
+        address: walletData.address,
+        timestamp: new Date().toISOString(),
+      },
+      requestId,
+      verifierId: reqObj.verifierId,
+    };
+
+    // SIGN V.P. WITH BACKEND PRIVATE KEY
+    const wallet = new ethers.Wallet(walletData.privateKey);
+    const vpString = JSON.stringify(vpPayload);     // canonical serialization
+    const backendSignature = await wallet.signMessage(vpString);
+
+    const VP = {
+      ...vpPayload,
+      backendSignature,
+    };
+
+    // UPDATE STORAGE
+    reqObj.status = "approved";
+    reqObj.resolvedAt = new Date().toISOString();
+    reqObj.vp = VP;
+    saveStorage();
+
+    // RETURN TO VERIFIER
+    return res.json({ ok: true, vp: VP });
+
+  } catch (err) {
+    console.error("Respond error:", err);
+    return res.status(500).json({ error: "Failed to respond to request" });
+  }
+});
+
 
 /**
  * GET /requests/:id

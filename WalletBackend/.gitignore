@@ -1,3 +1,4 @@
 wallet.json
 storage.json
 node_modules
+.env
