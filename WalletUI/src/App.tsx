@@ -1,46 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import type { StoredCredential, ProofRequest, CredentialData } from "./types";
+import { mockApi } from "./mockApi";
 
-// Types based on WalletBackend API structure
-interface CredentialData {
-  name: string;
-  dob: string;
-  pan: string;
-  issuedAt: string;
-}
-
-interface StoredCredential {
-  vc: CredentialData;
-  credentialHash: string;
-  issuerPublicKey: string;
-  issuerSignature: string;
-  storedAt: string;
-}
-
-interface VerifiablePresentation {
-  vp: Record<string, any>;
-  credentialHash: string;
-  issuerPublicKey: string;
-  issuerSignature: string;
-  backend: {
-    address: string;
-    timestamp: string;
-  };
-  backendSignature: string;
-  requestId: string;
-  verifierId: string;
-}
-
-interface ProofRequest {
-  id: string;
-  verifierId: string;
-  attributes: string[];
-  issuerPublicKey?: string | null;
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  resolvedAt?: string;
-  vp?: VerifiablePresentation;
-}
+// Check if mock API should be used
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
+const WALLET_API = import.meta.env.VITE_WALLET_API || "http://localhost:5002";
 
 // Utility functions
 const formatTime = (dateString: string): string => {
@@ -81,13 +46,17 @@ export default function WalletApp() {
   const [selectedReq, setSelectedReq] = useState<ProofRequest | null>(null);
   const [activeTab, setActiveTab] = useState<"credentials" | "requests" | "history">("credentials");
   const [showNotification, setShowNotification] = useState(false);
-  const WALLET_API = "http://localhost:5002";
 
   // Fetch credentials
   const loadCredentials = async () => {
     try {
-      const res = await axios.get<Record<string, StoredCredential>>(`${WALLET_API}/credentials`);
-      setCredentials(Object.values(res.data));
+      if (USE_MOCK_API) {
+        const data = await mockApi.getCredentials();
+        setCredentials(Object.values(data));
+      } else {
+        const res = await axios.get<Record<string, StoredCredential>>(`${WALLET_API}/credentials`);
+        setCredentials(Object.values(res.data));
+      }
     } catch (error) {
       console.error("Failed to load credentials:", error);
     }
@@ -96,14 +65,26 @@ export default function WalletApp() {
   // Fetch pending requests
   const loadPendingRequests = async () => {
     try {
-      const res = await axios.get<ProofRequest[]>(`${WALLET_API}/pending-requests`);
-      const prevCount = pendingRequests.length;
-      setPendingRequests(res.data);
-      
-      // Show notification if new request arrived
-      if (res.data.length > prevCount && prevCount > 0) {
-        setShowNotification(true);
-        setTimeout(() => setShowNotification(false), 5000);
+      if (USE_MOCK_API) {
+        const data = await mockApi.getPendingRequests();
+        const prevCount = pendingRequests.length;
+        setPendingRequests(data);
+        
+        // Show notification if new request arrived
+        if (data.length > prevCount && prevCount > 0) {
+          setShowNotification(true);
+          setTimeout(() => setShowNotification(false), 5000);
+        }
+      } else {
+        const res = await axios.get<ProofRequest[]>(`${WALLET_API}/pending-requests`);
+        const prevCount = pendingRequests.length;
+        setPendingRequests(res.data);
+        
+        // Show notification if new request arrived
+        if (res.data.length > prevCount && prevCount > 0) {
+          setShowNotification(true);
+          setTimeout(() => setShowNotification(false), 5000);
+        }
       }
     } catch (error) {
       console.error("Failed to load pending requests:", error);
@@ -113,8 +94,13 @@ export default function WalletApp() {
   // Fetch all requests (for history)
   const loadAllRequests = async () => {
     try {
-      const res = await axios.get<ProofRequest[]>(`${WALLET_API}/all-requests`);
-      setAllRequests(res.data);
+      if (USE_MOCK_API) {
+        const data = await mockApi.getAllRequests();
+        setAllRequests(data);
+      } else {
+        const res = await axios.get<ProofRequest[]>(`${WALLET_API}/all-requests`);
+        setAllRequests(res.data);
+      }
     } catch (error) {
       console.error("Failed to load all requests:", error);
     }
@@ -139,10 +125,14 @@ export default function WalletApp() {
   const respond = async (approve: boolean) => {
     if (!selectedReq) return;
     try {
-      await axios.post(`${WALLET_API}/respond`, {
-        requestId: selectedReq.id,
-        approve,
-      });
+      if (USE_MOCK_API) {
+        await mockApi.respond(selectedReq.id, approve);
+      } else {
+        await axios.post(`${WALLET_API}/respond`, {
+          requestId: selectedReq.id,
+          approve,
+        });
+      }
       setSelectedReq(null);
       loadPendingRequests();
       loadAllRequests();
@@ -187,22 +177,31 @@ export default function WalletApp() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
+      {/* Mock API Indicator */}
+      {USE_MOCK_API && (
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-2 text-center">
+          <p className="text-yellow-400 text-sm font-medium">
+            🧪 Using Mock API - Backend services not required
+          </p>
+        </div>
+      )}
+      
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <header className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-10 shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               SSI Wallet
             </h1>
             <div className="flex items-center gap-4">
               {pendingRequests.length > 0 && (
                 <div className="relative">
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold animate-pulse">
                     {pendingRequests.length}
                   </div>
                   <button
                     onClick={() => setActiveTab("requests")}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
                   >
                     Pending Requests
                   </button>
@@ -215,38 +214,45 @@ export default function WalletApp() {
 
       {/* Notification Banner */}
       {showNotification && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center">
-          <p className="text-yellow-400">🔔 New verification request received!</p>
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-3 text-center animate-slide-down">
+          <p className="text-yellow-400 font-medium">🔔 New verification request received!</p>
         </div>
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-12">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-slate-700">
+        <div className="flex gap-1 mb-8 sm:mb-10 border-b border-slate-700/50">
           <button
             onClick={() => setActiveTab("credentials")}
-            className={`px-4 py-2 font-semibold transition-colors ${
+            className={`px-5 py-3 font-semibold transition-all relative ${
               activeTab === "credentials"
-                ? "border-b-2 border-blue-400 text-blue-400"
+                ? "text-blue-400"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            My Credentials ({credentials.length})
+            <span>My Credentials</span>
+            <span className="ml-2 text-xs opacity-70">({credentials.length})</span>
+            {activeTab === "credentials" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("requests")}
-            className={`px-4 py-2 font-semibold transition-colors relative ${
+            className={`px-5 py-3 font-semibold transition-all relative ${
               activeTab === "requests"
-                ? "border-b-2 border-blue-400 text-blue-400"
+                ? "text-blue-400"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Pending Requests
+            <span>Pending Requests</span>
             {pendingRequests.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-red-500 rounded-full text-xs">
+              <span className="ml-2 px-2 py-0.5 bg-red-500 rounded-full text-xs font-bold">
                 {pendingRequests.length}
               </span>
+            )}
+            {activeTab === "requests" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
             )}
           </button>
           <button
@@ -254,20 +260,23 @@ export default function WalletApp() {
               setActiveTab("history");
               loadAllRequests();
             }}
-            className={`px-4 py-2 font-semibold transition-colors ${
+            className={`px-5 py-3 font-semibold transition-all relative ${
               activeTab === "history"
-                ? "border-b-2 border-blue-400 text-blue-400"
+                ? "text-blue-400"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
             Transaction History
+            {activeTab === "history" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+            )}
           </button>
         </div>
 
         {/* Credentials Tab */}
         {activeTab === "credentials" && (
           <section>
-            <h2 className="text-xl font-semibold mb-4">Stored Credentials</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Stored Credentials</h2>
             {credentials.length === 0 ? (
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
                 <p className="text-slate-400 mb-2">No credentials stored yet.</p>
@@ -276,14 +285,14 @@ export default function WalletApp() {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {credentials.map((cred, i) => (
                   <div
                     key={i}
-                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 hover:border-blue-500/50 transition-colors"
+                    className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div>
+      <div>
                         <h3 className="font-semibold text-lg mb-1">{cred.vc.name}</h3>
                         <p className="text-sm text-slate-400">
                           Issued {formatTime(cred.storedAt)}
@@ -307,7 +316,7 @@ export default function WalletApp() {
                         <span className="text-slate-400">Issuer:</span>
                         <span className="font-mono text-xs">{truncateAddress(cred.issuerPublicKey)}</span>
                       </div>
-                    </div>
+      </div>
                     
                     <div className="mt-4 pt-4 border-t border-slate-700">
                       <button
@@ -318,7 +327,7 @@ export default function WalletApp() {
                         className="text-xs text-blue-400 hover:text-blue-300"
                       >
                         Copy Hash: {truncateAddress(cred.credentialHash)}
-                      </button>
+        </button>
                     </div>
                   </div>
                 ))}
@@ -330,19 +339,19 @@ export default function WalletApp() {
         {/* Pending Requests Tab */}
         {activeTab === "requests" && (
           <section>
-            <h2 className="text-xl font-semibold mb-4">Pending Verification Requests</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Pending Verification Requests</h2>
             {pendingRequests.length === 0 ? (
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
                 <p className="text-slate-400">No pending requests.</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5 sm:space-y-6">
                 {pendingRequests.map((req) => {
                   const matchingCred = findMatchingCredential(req);
                   return (
                     <div
                       key={req.id}
-                      className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 hover:border-yellow-500/50 transition-all cursor-pointer"
+                      className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-yellow-500/50 hover:shadow-xl hover:shadow-yellow-500/10 transition-all duration-300 cursor-pointer hover:-translate-y-0.5"
                       onClick={() => setSelectedReq(req)}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -383,8 +392,8 @@ export default function WalletApp() {
                           <div className="mt-2 pt-2 border-t border-slate-700">
                             <p className="text-xs text-green-400">
                               ✓ Matching credential found: {matchingCred.vc.name}
-                            </p>
-                          </div>
+        </p>
+      </div>
                         )}
                       </div>
                     </div>
@@ -398,17 +407,17 @@ export default function WalletApp() {
         {/* Transaction History Tab */}
         {activeTab === "history" && (
           <section>
-            <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Transaction History</h2>
             {allRequests.length === 0 ? (
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
                 <p className="text-slate-400">No transactions yet.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4 sm:space-y-5">
                 {allRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 hover:border-slate-600 transition-colors"
+                    className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-slate-600 hover:shadow-lg transition-all duration-300"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -455,8 +464,8 @@ export default function WalletApp() {
 
       {/* Approval Modal */}
       {selectedReq && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-lg space-y-6 shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-slate-800 border border-slate-700/50 rounded-2xl p-6 sm:p-8 w-full max-w-lg space-y-6 sm:space-y-7 shadow-2xl animate-scale-in">
             <div>
               <h3 className="text-2xl font-bold mb-2">Verification Request</h3>
               <p className="text-slate-400">{selectedReq.verifierId} wants to verify:</p>
