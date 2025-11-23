@@ -107,6 +107,26 @@ export const mockApi = {
     );
   },
 
+  // POST /store-credential
+  storeCredential: async (vcData: { vc: any; credentialHash: string; issuerPublicKey: string; issuerSignature: string }): Promise<{ ok: boolean; stored: boolean; message: string }> => {
+    await delay(500);
+    
+    // Add to mock credentials
+    MOCK_CREDENTIALS[vcData.credentialHash] = {
+      vc: vcData.vc,
+      credentialHash: vcData.credentialHash,
+      issuerPublicKey: vcData.issuerPublicKey,
+      issuerSignature: vcData.issuerSignature,
+      storedAt: new Date().toISOString(),
+    };
+    
+    return {
+      ok: true,
+      stored: true,
+      message: "Credential successfully validated and stored",
+    };
+  },
+
   // POST /respond
   respond: async (requestId: string, approve: boolean): Promise<{ ok: boolean; vp?: any; message?: string }> => {
     await delay(500);

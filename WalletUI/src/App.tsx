@@ -47,6 +47,10 @@ export default function WalletApp() {
   const [selectedReq, setSelectedReq] = useState<ProofRequest | null>(null);
   const [activeTab, setActiveTab] = useState<"credentials" | "requests" | "history">("credentials");
   const [showNotification, setShowNotification] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importJson, setImportJson] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Fetch credentials
   const loadCredentials = async () => {
@@ -141,6 +145,68 @@ export default function WalletApp() {
     } catch (error) {
       console.error("Failed to respond:", error);
       alert("Failed to respond to request. Please try again.");
+    }
+  };
+
+  // Store credential
+  const storeCredential = async (vcData: { vc: CredentialData; credentialHash: string; issuerPublicKey: string; issuerSignature: string }) => {
+    try {
+      setIsImporting(true);
+      setImportError(null);
+
+      if (USE_MOCK_API) {
+        await mockApi.storeCredential(vcData);
+      } else {
+        const res = await axios.post(`${WALLET_API}/store-credential`, {
+          vc: vcData,
+        });
+        
+        if (!res.data.ok) {
+          throw new Error(res.data.error || "Failed to store credential");
+        }
+      }
+
+      // Success
+      setShowImportModal(false);
+      setImportJson("");
+      setImportError(null);
+      await loadCredentials();
+      alert("Credential successfully stored!");
+    } catch (error: any) {
+      console.error("Failed to store credential:", error);
+      setImportError(error.response?.data?.error || error.message || "Failed to store credential. Please check the data format.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Handle import form submission
+  const handleImportSubmit = () => {
+    try {
+      setImportError(null);
+      
+      if (!importJson.trim()) {
+        setImportError("Please enter credential data");
+        return;
+      }
+
+      // Parse JSON
+      const parsed = JSON.parse(importJson);
+      
+      // Validate structure
+      if (!parsed.vc || !parsed.credentialHash || !parsed.issuerPublicKey || !parsed.issuerSignature) {
+        setImportError("Invalid credential format. Required fields: vc, credentialHash, issuerPublicKey, issuerSignature");
+        return;
+      }
+
+      // Store credential
+      storeCredential(parsed);
+    } catch (error: any) {
+      if (error instanceof SyntaxError) {
+        setImportError("Invalid JSON format. Please check your input.");
+      } else {
+        setImportError(error.message || "Failed to parse credential data");
+      }
     }
   };
 
@@ -277,10 +343,19 @@ export default function WalletApp() {
           </button>
         </div>
 
-        {/* Credentials Tab */}
-        {activeTab === "credentials" && (
-          <section>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-slate-100">Stored Credentials</h2>
+         {/* Credentials Tab */}
+         {activeTab === "credentials" && (
+           <section>
+             <div className="flex items-center justify-between mb-10">
+               <h2 className="text-3xl sm:text-4xl font-bold text-slate-100">Stored Credentials</h2>
+               <button
+                 onClick={() => setShowImportModal(true)}
+                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg shadow-blue-500/30 text-white flex items-center gap-2"
+               >
+                 <span>+</span>
+                 <span>Import Credential</span>
+               </button>
+             </div>
             {credentials.length === 0 ? (
               <div className="bg-gradient-to-br from-slate-800/50 to-slate-800/20 border border-slate-700 rounded-2xl p-12 text-center">
                 <div className="text-4xl mb-4">📋</div>
@@ -536,6 +611,69 @@ export default function WalletApp() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Import Credential Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-800/80 border border-slate-700/50 rounded-3xl p-8 w-full max-w-2xl space-y-6 shadow-2xl shadow-slate-950/50 animate-scale-in max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="text-3xl font-bold text-white mb-2">Import Credential</h3>
+              <p className="text-slate-400">
+                Paste the credential JSON data below. The credential will be validated before storage.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  Credential JSON
+                </label>
+                <textarea
+                  value={importJson}
+                  onChange={(e) => {
+                    setImportJson(e.target.value);
+                    setImportError(null);
+                  }}
+                  placeholder={`{\n  "vc": {\n    "name": "John Doe",\n    "dob": "1990-01-01",\n    "pan": "ABCDE1234F",\n    "issuedAt": "2024-01-15T10:30:00.000Z"\n  },\n  "credentialHash": "...",\n  "issuerPublicKey": "0x...",\n  "issuerSignature": "0x..."\n}`}
+                  className="w-full h-64 bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 font-mono text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {importError && (
+                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4">
+                  <p className="text-red-300 text-sm font-medium">⚠️ {importError}</p>
+                </div>
+              )}
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <p className="text-blue-300 text-sm">
+                  <strong>Required fields:</strong> vc, credentialHash, issuerPublicKey, issuerSignature
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <button
+                onClick={handleImportSubmit}
+                disabled={isImporting || !importJson.trim()}
+                className="flex-1 py-3.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-green-500/30 text-white"
+              >
+                {isImporting ? "Importing..." : "✓ Import Credential"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportJson("");
+                  setImportError(null);
+                }}
+                className="px-6 py-3.5 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl transition-all text-slate-300 hover:text-slate-100 font-medium border border-slate-600/50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -105,7 +105,7 @@ section:last-child {
 
 /* ===== HEADING STYLES ===== */
 h2 {
-  margin: 0 0 40px 0 !important;
+  /* margin: 0 0 40px 0 !important; */
   padding: 0 !important;
   font-size: clamp(1.875rem, 5vw, 2.25rem);
   font-weight: 700;
@@ -334,7 +334,7 @@ li {
 
 /* ===== BUTTON STYLES ===== */
 button {
-  padding: 14px 24px !important;
+  padding: 7px 24px !important;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
