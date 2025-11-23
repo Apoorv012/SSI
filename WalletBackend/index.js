@@ -167,6 +167,17 @@ app.get("/pending-requests", (req, res) => {
   return res.json(list);
 });
 
+/**
+ * GET /all-requests
+ * Get all requests (pending, approved, rejected) for transaction history
+ */
+app.get("/all-requests", (req, res) => {
+  const list = Object.values(storage.requests);
+  // Sort by createdAt, newest first
+  list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return res.json(list);
+});
+
 
 /**
  * Select a credential capable of fulfilling the request
