@@ -1,1 +1,469 @@
-/* Wallet UI styles */
+/* Wallet UI - Professional Spacing and Layout */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 100%);
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== HEADER STYLES ===== */
+header {
+  padding: 24px 0 !important;
+  margin: 0 !important;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+}
+
+header .max-w-7xl {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (min-width: 640px) {
+  header .max-w-7xl {
+    padding: 0 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  header .max-w-7xl {
+    padding: 0 48px;
+  }
+}
+
+h1 {
+  margin: 0 0 8px 0 !important;
+  padding: 0 !important;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+header p {
+  margin: 8px 0 0 0 !important;
+  padding: 0 !important;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* ===== MAIN CONTENT CONTAINER ===== */
+main {
+  flex: 1;
+  padding: 40px 24px !important;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  main {
+    padding: 48px 32px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding: 64px 48px !important;
+  }
+}
+
+/* ===== SECTION STYLES ===== */
+section {
+  margin: 0 0 40px 0;
+  padding: 0;
+}
+
+section:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== HEADING STYLES ===== */
+h2 {
+  margin: 0 0 40px 0 !important;
+  padding: 0 !important;
+  font-size: clamp(1.875rem, 5vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: #f1f5f9;
+}
+
+h3 {
+  margin: 0 0 16px 0 !important;
+  padding: 0 !important;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+/* ===== TAB STYLES ===== */
+.tabs-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px !important;
+  padding-bottom: 20px !important;
+  border-bottom: 2px solid rgba(148, 163, 184, 0.3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+button {
+  margin: 0 !important;
+  padding: 16px 24px !important;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+/* ===== CARD STYLES ===== */
+.card,
+.bg-gradient-to-br {
+  margin-bottom: 24px !important;
+  padding: 28px !important;
+  border-radius: 16px;
+  display: block;
+}
+
+/* ===== GRID SPACING ===== */
+.grid {
+  gap: 24px !important;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ===== SPACE-Y OVERRIDES ===== */
+.space-y-2 > * + * {
+  margin-top: 8px !important;
+}
+
+.space-y-3 > * + * {
+  margin-top: 12px !important;
+}
+
+.space-y-4 > * + * {
+  margin-top: 16px !important;
+}
+
+.space-y-6 > * + * {
+  margin-top: 24px !important;
+}
+
+.space-y-8 > * + * {
+  margin-top: 32px !important;
+}
+
+/* ===== PADDING OVERRIDES ===== */
+.p-4 {
+  padding: 16px !important;
+}
+
+.p-6 {
+  padding: 24px !important;
+}
+
+.p-7 {
+  padding: 28px !important;
+}
+
+.p-8 {
+  padding: 32px !important;
+}
+
+.p-12 {
+  padding: 48px !important;
+}
+
+.px-4 {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.px-6 {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+.py-3 {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+.py-4 {
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+.pt-4 {
+  padding-top: 16px !important;
+}
+
+.pt-6 {
+  padding-top: 24px !important;
+}
+
+.pb-4 {
+  padding-bottom: 16px !important;
+}
+
+/* ===== MARGIN OVERRIDES ===== */
+.mb-1 {
+  margin-bottom: 4px !important;
+}
+
+.mb-2 {
+  margin-bottom: 8px !important;
+}
+
+.mb-3 {
+  margin-bottom: 12px !important;
+}
+
+.mb-4 {
+  margin-bottom: 16px !important;
+}
+
+.mb-6 {
+  margin-bottom: 24px !important;
+}
+
+.mb-10 {
+  margin-bottom: 40px !important;
+}
+
+.mt-1 {
+  margin-top: 4px !important;
+}
+
+.mt-2 {
+  margin-top: 8px !important;
+}
+
+.mt-4 {
+  margin-top: 16px !important;
+}
+
+.ml-2 {
+  margin-left: 8px !important;
+}
+
+.ml-4 {
+  margin-left: 16px !important;
+}
+
+/* ===== BORDER STYLES ===== */
+.border {
+  border-width: 1px !important;
+}
+
+.border-t {
+  border-top-width: 1px !important;
+}
+
+.border-b {
+  border-bottom-width: 1px !important;
+}
+
+/* ===== TEXT SPACING ===== */
+p {
+  margin: 0 0 16px 0 !important;
+  padding: 0 !important;
+  line-height: 1.6;
+}
+
+p:last-child {
+  margin-bottom: 0 !important;
+}
+
+li {
+  margin-bottom: 12px !important;
+  line-height: 1.6;
+}
+
+/* ===== BUTTON STYLES ===== */
+button {
+  padding: 14px 24px !important;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* ===== FLEX GAP OVERRIDES ===== */
+.gap-1 {
+  gap: 4px !important;
+}
+
+.gap-2 {
+  gap: 8px !important;
+}
+
+.gap-3 {
+  gap: 12px !important;
+}
+
+.gap-4 {
+  gap: 16px !important;
+}
+
+.gap-6 {
+  gap: 24px !important;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  padding: 48px 24px !important;
+  text-align: center;
+  border-radius: 16px;
+  border: 2px dashed rgba(148, 163, 184, 0.3);
+  margin-bottom: 32px !important;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* ===== MODAL STYLES ===== */
+.modal-overlay {
+  padding: 24px !important;
+  backdrop-filter: blur(12px);
+}
+
+.modal-content {
+  padding: 32px !important;
+  border-radius: 24px;
+  gap: 32px !important;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  main {
+    padding: 24px 16px !important;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 24px !important;
+  }
+
+  button {
+    padding: 12px 20px !important;
+    font-size: 0.95rem;
+  }
+
+  .modal-content {
+    padding: 24px !important;
+  }
+}
+
+/* Ensure consistent spacing across all elements */
+* {
+  box-sizing: border-box;
+}
+
+/* Fix any cascading margin issues */
+div > div:last-child {
+  margin-bottom: 0 !important;
+}
+
