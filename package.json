@@ -1,0 +1,21 @@
+{
+  "name": "ssi",
+  "version": "1.0.0",
+  "description": "Today, organizations (banks, employers, service providers) ask users to share full identity documents (Aadhaar, PAN, Passport, DL, Degrees).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Apoorv012/SSI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Apoorv012/SSI/issues"
+  },
+  "homepage": "https://github.com/Apoorv012/SSI#readme"
+}

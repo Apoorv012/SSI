@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import type { StoredCredential, ProofRequest, CredentialData } from "./types";
 import { mockApi } from "./mockApi";
+import "./App.css";
 
 // Check if mock API should be used
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
@@ -176,32 +177,35 @@ export default function WalletApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       {/* Mock API Indicator */}
       {USE_MOCK_API && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-2 text-center">
-          <p className="text-yellow-400 text-sm font-medium">
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-3 text-center">
+          <p className="text-yellow-400 text-sm font-semibold">
             🧪 Using Mock API - Backend services not required
           </p>
         </div>
       )}
       
       {/* Header */}
-      <header className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-10 shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-5">
+      <header className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-10 shadow-xl shadow-slate-950/50">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              SSI Wallet
-            </h1>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                SSI Wallet
+              </h1>
+              <p className="text-sm text-slate-400 mt-1">Secure Identity Management</p>
+            </div>
             <div className="flex items-center gap-4">
               {pendingRequests.length > 0 && (
                 <div className="relative">
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold animate-pulse">
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white animate-pulse shadow-lg shadow-red-500/50">
                     {pendingRequests.length}
                   </div>
                   <button
                     onClick={() => setActiveTab("requests")}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-lg font-semibold transition-all hover:scale-105 shadow-lg shadow-blue-500/30 text-white"
                   >
                     Pending Requests
                   </button>
@@ -214,45 +218,45 @@ export default function WalletApp() {
 
       {/* Notification Banner */}
       {showNotification && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-3 text-center animate-slide-down">
-          <p className="text-yellow-400 font-medium">🔔 New verification request received!</p>
+        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-b border-yellow-500/30 px-6 sm:px-8 lg:px-12 py-4 text-center animate-slide-down">
+          <p className="text-yellow-300 font-semibold">🔔 New verification request received!</p>
         </div>
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-12">
+      <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10 sm:py-12 lg:py-16">
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 sm:mb-10 border-b border-slate-700/50">
+        <div className="flex gap-2 mb-10 border-b-2 border-slate-700/50 overflow-x-auto">
           <button
             onClick={() => setActiveTab("credentials")}
-            className={`px-5 py-3 font-semibold transition-all relative ${
+            className={`px-6 py-4 font-semibold transition-all relative whitespace-nowrap ${
               activeTab === "credentials"
                 ? "text-blue-400"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-400 hover:text-slate-300"
             }`}
           >
             <span>My Credentials</span>
-            <span className="ml-2 text-xs opacity-70">({credentials.length})</span>
+            <span className="ml-2 text-xs opacity-70 bg-slate-700/40 px-2 py-1 rounded-full">({credentials.length})</span>
             {activeTab === "credentials" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></div>
             )}
           </button>
           <button
             onClick={() => setActiveTab("requests")}
-            className={`px-5 py-3 font-semibold transition-all relative ${
+            className={`px-6 py-4 font-semibold transition-all relative whitespace-nowrap ${
               activeTab === "requests"
                 ? "text-blue-400"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-400 hover:text-slate-300"
             }`}
           >
             <span>Pending Requests</span>
             {pendingRequests.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-red-500 rounded-full text-xs font-bold">
+              <span className="ml-2 px-3 py-1 bg-red-500/30 text-red-300 rounded-full text-xs font-bold border border-red-500/50">
                 {pendingRequests.length}
               </span>
             )}
             {activeTab === "requests" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></div>
             )}
           </button>
           <button
@@ -260,15 +264,15 @@ export default function WalletApp() {
               setActiveTab("history");
               loadAllRequests();
             }}
-            className={`px-5 py-3 font-semibold transition-all relative ${
+            className={`px-6 py-4 font-semibold transition-all relative whitespace-nowrap ${
               activeTab === "history"
                 ? "text-blue-400"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-400 hover:text-slate-300"
             }`}
           >
             Transaction History
             {activeTab === "history" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></div>
             )}
           </button>
         </div>
@@ -276,58 +280,59 @@ export default function WalletApp() {
         {/* Credentials Tab */}
         {activeTab === "credentials" && (
           <section>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Stored Credentials</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-slate-100">Stored Credentials</h2>
             {credentials.length === 0 ? (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-                <p className="text-slate-400 mb-2">No credentials stored yet.</p>
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-800/20 border border-slate-700 rounded-2xl p-12 text-center">
+                <div className="text-4xl mb-4">📋</div>
+                <p className="text-slate-300 mb-3 text-lg font-medium">No credentials stored yet.</p>
                 <p className="text-sm text-slate-500">
                   Credentials will appear here once you import them.
                 </p>
               </div>
             ) : (
-              <div className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {credentials.map((cred, i) => (
                   <div
                     key={i}
-                    className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+                    className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 border border-slate-700/60 rounded-2xl p-7 hover:border-blue-500/60 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 hover:-translate-y-1.5 hover:from-slate-800 backdrop-blur-sm"
                   >
-                    <div className="flex items-start justify-between mb-4">
-      <div>
-                        <h3 className="font-semibold text-lg mb-1">{cred.vc.name}</h3>
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl mb-1 text-white">{cred.vc.name}</h3>
                         <p className="text-sm text-slate-400">
                           Issued {formatTime(cred.storedAt)}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center font-bold text-xl">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-purple-500/50 ml-4">
                         {cred.vc.name.charAt(0)}
                       </div>
                     </div>
                     
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Date of Birth:</span>
-                        <span className="font-medium">{cred.vc.dob}</span>
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center justify-between bg-slate-900/40 rounded-lg px-4 py-3">
+                        <span className="text-slate-400 text-sm">Date of Birth:</span>
+                        <span className="font-medium text-slate-100">{cred.vc.dob}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">PAN:</span>
-                        <span className="font-medium font-mono">{cred.vc.pan}</span>
+                      <div className="flex items-center justify-between bg-slate-900/40 rounded-lg px-4 py-3">
+                        <span className="text-slate-400 text-sm">PAN:</span>
+                        <span className="font-medium font-mono text-blue-300">{cred.vc.pan}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Issuer:</span>
-                        <span className="font-mono text-xs">{truncateAddress(cred.issuerPublicKey)}</span>
+                      <div className="flex items-center justify-between bg-slate-900/40 rounded-lg px-4 py-3">
+                        <span className="text-slate-400 text-sm">Issuer:</span>
+                        <span className="font-mono text-xs text-purple-300">{truncateAddress(cred.issuerPublicKey)}</span>
                       </div>
-      </div>
+                    </div>
                     
-                    <div className="mt-4 pt-4 border-t border-slate-700">
+                    <div className="pt-6 border-t border-slate-700/50">
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(cred.credentialHash);
                           alert("Credential hash copied to clipboard!");
                         }}
-                        className="text-xs text-blue-400 hover:text-blue-300"
+                        className="w-full text-sm text-blue-400 hover:text-blue-300 transition-colors py-2 px-3 rounded-lg hover:bg-blue-500/10"
                       >
-                        Copy Hash: {truncateAddress(cred.credentialHash)}
-        </button>
+                        📋 Copy Hash: {truncateAddress(cred.credentialHash)}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -339,24 +344,25 @@ export default function WalletApp() {
         {/* Pending Requests Tab */}
         {activeTab === "requests" && (
           <section>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Pending Verification Requests</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-slate-100">Pending Verification Requests</h2>
             {pendingRequests.length === 0 ? (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-                <p className="text-slate-400">No pending requests.</p>
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-800/20 border border-slate-700 rounded-2xl p-12 text-center">
+                <div className="text-4xl mb-4">⏳</div>
+                <p className="text-slate-300 text-lg font-medium">No pending requests.</p>
               </div>
             ) : (
-              <div className="space-y-5 sm:space-y-6">
+              <div className="space-y-6">
                 {pendingRequests.map((req) => {
                   const matchingCred = findMatchingCredential(req);
                   return (
                     <div
                       key={req.id}
-                      className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-yellow-500/50 hover:shadow-xl hover:shadow-yellow-500/10 transition-all duration-300 cursor-pointer hover:-translate-y-0.5"
+                      className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 border border-slate-700/60 rounded-2xl p-7 hover:border-yellow-500/60 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 hover:-translate-y-1.5 cursor-pointer backdrop-blur-sm"
                       onClick={() => setSelectedReq(req)}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg mb-1">{req.verifierId}</h3>
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-xl mb-1 text-white">{req.verifierId}</h3>
                           <p className="text-sm text-slate-400">
                             Requested {formatTime(req.createdAt)}
                           </p>
@@ -364,14 +370,14 @@ export default function WalletApp() {
                         {getStatusBadge(req.status)}
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <div>
-                          <span className="text-sm text-slate-400">Requesting:</span>
-                          <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-sm text-slate-300 font-semibold mb-3 block">Requesting:</span>
+                          <div className="flex flex-wrap gap-3">
                             {req.attributes.map((attr, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-sm"
+                                className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg text-sm font-medium border border-blue-500/30"
                               >
                                 {getAttributeLabel(attr)}
                               </span>
@@ -380,20 +386,20 @@ export default function WalletApp() {
                         </div>
                         
                         {req.issuerPublicKey && (
-                          <div className="text-sm">
-                            <span className="text-slate-400">Issuer Required:</span>
-                            <span className="ml-2 font-mono text-xs">
+                          <div className="bg-slate-900/40 rounded-lg px-4 py-3">
+                            <span className="text-slate-400 text-sm">Issuer Required:</span>
+                            <span className="ml-2 font-mono text-xs text-purple-300">
                               {truncateAddress(req.issuerPublicKey)}
                             </span>
                           </div>
                         )}
                         
                         {matchingCred && (
-                          <div className="mt-2 pt-2 border-t border-slate-700">
-                            <p className="text-xs text-green-400">
-                              ✓ Matching credential found: {matchingCred.vc.name}
-        </p>
-      </div>
+                          <div className="mt-4 pt-4 border-t border-slate-700/50 bg-green-500/5 rounded-lg p-4">
+                            <p className="text-sm text-green-400 font-medium">
+                              ✅ Matching credential found: <span className="text-green-300">{matchingCred.vc.name}</span>
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -407,22 +413,23 @@ export default function WalletApp() {
         {/* Transaction History Tab */}
         {activeTab === "history" && (
           <section>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-100">Transaction History</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-10 text-slate-100">Transaction History</h2>
             {allRequests.length === 0 ? (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-                <p className="text-slate-400">No transactions yet.</p>
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-800/20 border border-slate-700 rounded-2xl p-12 text-center">
+                <div className="text-4xl mb-4">📜</div>
+                <p className="text-slate-300 text-lg font-medium">No transactions yet.</p>
               </div>
             ) : (
-              <div className="space-y-4 sm:space-y-5">
+              <div className="space-y-6">
                 {allRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 sm:p-7 hover:border-slate-600 hover:shadow-lg transition-all duration-300"
+                    className="bg-gradient-to-br from-slate-800/80 to-slate-800/40 border border-slate-700/60 rounded-2xl p-7 hover:border-slate-600/80 hover:shadow-xl hover:shadow-slate-950/50 transition-all duration-300 backdrop-blur-sm"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{req.verifierId}</h3>
-                        <p className="text-xs text-slate-400">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl text-white">{req.verifierId}</h3>
+                        <p className="text-sm text-slate-400 mt-1">
                           {formatTime(req.createdAt)}
                           {req.resolvedAt && ` • Resolved ${formatTime(req.resolvedAt)}`}
                         </p>
@@ -430,14 +437,14 @@ export default function WalletApp() {
                       {getStatusBadge(req.status)}
                     </div>
                     
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-4">
                       <div>
-                        <span className="text-slate-400">Attributes requested:</span>
-                        <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-sm text-slate-300 font-semibold mb-3 block">Attributes requested:</span>
+                        <div className="flex flex-wrap gap-3">
                           {req.attributes.map((attr, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs"
+                              className="px-4 py-2 bg-slate-700/50 text-slate-200 rounded-lg text-sm font-medium border border-slate-600/50"
                             >
                               {getAttributeLabel(attr)}
                             </span>
@@ -446,9 +453,9 @@ export default function WalletApp() {
                       </div>
                       
                       {req.status === "approved" && req.vp && (
-                        <div className="mt-3 pt-3 border-t border-slate-700">
-                          <p className="text-xs text-slate-400 mb-1">Shared data:</p>
-                          <div className="bg-slate-900/50 rounded p-2 font-mono text-xs">
+                        <div className="mt-4 pt-4 border-t border-slate-700/50 bg-slate-900/40 rounded-lg p-4">
+                          <p className="text-sm text-slate-300 mb-3 font-semibold">Shared data:</p>
+                          <div className="bg-slate-950/60 rounded-lg p-4 font-mono text-xs text-slate-300 overflow-x-auto border border-slate-700/30">
                             <pre>{JSON.stringify(req.vp.vp, null, 2)}</pre>
                           </div>
                         </div>
@@ -464,16 +471,18 @@ export default function WalletApp() {
 
       {/* Approval Modal */}
       {selectedReq && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
-          <div className="bg-slate-800 border border-slate-700/50 rounded-2xl p-6 sm:p-8 w-full max-w-lg space-y-6 sm:space-y-7 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 sm:p-6">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-800/80 border border-slate-700/50 rounded-3xl p-8 w-full max-w-lg space-y-8 shadow-2xl shadow-slate-950/50 animate-scale-in">
             <div>
-              <h3 className="text-2xl font-bold mb-2">Verification Request</h3>
-              <p className="text-slate-400">{selectedReq.verifierId} wants to verify:</p>
+              <h3 className="text-3xl font-bold text-white mb-2">Verification Request</h3>
+              <p className="text-slate-400">
+                <span className="font-semibold text-blue-400">{selectedReq.verifierId}</span> wants to verify:
+              </p>
             </div>
 
-            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-              <p className="text-sm text-slate-400 mb-3">You will share:</p>
-              <div className="space-y-2">
+            <div className="bg-slate-900/60 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-sm">
+              <p className="text-sm text-slate-300 mb-5 font-semibold">You will share:</p>
+              <div className="space-y-4">
                 {selectedReq.attributes.map((attr, i) => {
                   const matchingCred = findMatchingCredential(selectedReq);
                   let previewValue = "N/A";
@@ -490,8 +499,8 @@ export default function WalletApp() {
                   }
                   
                   return (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-300">{getAttributeLabel(attr)}:</span>
+                    <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-3 border border-slate-700/30">
+                      <span className="text-slate-300 font-medium">{getAttributeLabel(attr)}:</span>
                       <span className="font-mono font-semibold text-blue-400">{previewValue}</span>
                     </div>
                   );
@@ -499,30 +508,30 @@ export default function WalletApp() {
               </div>
               
               {findMatchingCredential(selectedReq) && (
-                <div className="mt-4 pt-4 border-t border-slate-700">
-                  <p className="text-xs text-slate-400">From credential:</p>
-                  <p className="text-sm font-semibold">{findMatchingCredential(selectedReq)?.vc.name}</p>
+                <div className="mt-6 pt-6 border-t border-slate-700/50 bg-green-500/10 rounded-lg p-4">
+                  <p className="text-xs text-slate-400 mb-2 font-semibold">From credential:</p>
+                  <p className="text-base font-bold text-green-400">{findMatchingCredential(selectedReq)?.vc.name}</p>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
-                className="flex-1 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold transition-colors"
+                className="flex-1 py-3.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-green-500/30 text-white"
                 onClick={() => respond(true)}
               >
-                Approve
+                ✓ Approve
               </button>
               <button
-                className="flex-1 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition-colors"
+                className="flex-1 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-red-500/30 text-white"
                 onClick={() => respond(false)}
               >
-                Reject
+                ✕ Reject
               </button>
             </div>
 
             <button
-              className="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-xl transition-colors"
+              className="w-full py-3 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl transition-all text-slate-300 hover:text-slate-100 font-medium border border-slate-600/50"
               onClick={() => setSelectedReq(null)}
             >
               Cancel
