@@ -50,19 +50,19 @@ Your SSI system is divided into four modular components, each representing a rea
 - ✔ Registers issuer on blockchain (one-time)
 - ✔ Revokes credentials (revokeCredential)
 
-**Endpoints:**
+**Key Features:**
 
-- `POST /issue` - Issue a new credential
-- `POST /revoke` - Revoke an existing credential
+- Generates and signs Verifiable Credentials (VCs)
+- Stores credential hashes on blockchain
+- Revokes credentials with blockchain updates
+- Auto-registers issuer on blockchain at startup
+- Protected via Admin API key authentication
 
-**Security:**
+**Default Port:** `5001`
 
-- Protected via Admin API key
-- Only issuer backend can issue/revoke
-- Issuer private key stored securely
-- Issuer identifies on blockchain via Ethereum address
+**Documentation:** See [`Issuer/API.md`](Issuer/API.md) for complete API documentation
 
-**Location:** `Issuer/`
+**Status:** ✅ **Implemented**
 
 ---
 
@@ -103,29 +103,33 @@ Your SSI system is divided into four modular components, each representing a rea
 
 **Responsibilities:**
 
-- ✔ Stores issued VC (Verifiable Credentials)
+- ✔ Stores issued VC (Verifiable Credentials) with full validation
 - ✔ Accepts proof requests from verifier
-- ✔ Shows approval request via UI
+- ✔ Manages pending approval requests
 - ✔ Computes derived attributes (over18, panLast4)
 - ✔ Creates Verifiable Presentation (VP)
 - ✔ Signs VP with wallet private key
-- ✔ Sends VP to verifier
+- ✔ Validates credentials before storing/using (issuer trust, on-chain checks)
 
-**VP contains:**
+**Key Features:**
 
-- Derived claims (not full credential)
-- Original issuer signature
-- Credential hash
-- Wallet signature
-- Wallet public key
+- Stores and validates Verifiable Credentials with comprehensive checks
+- Manages proof requests from verifiers
+- Computes derived attributes (over18, panLast4)
+- Generates and signs Verifiable Presentations (VPs)
+- Validates credentials on-chain before storage/use
 
-**This ensures:**
+**Derived Attributes:**
 
-- Only approved data is shared
-- User controls disclosure
-- Integrity is cryptographically guaranteed
+- `over18` - Computed from date of birth
+- `panLast4` - Last 4 digits of PAN
+- Direct attributes - Passed through from credential
 
-**Status:** *Planned / To be implemented*
+**Default Port:** `5002`
+
+**Documentation:** See [`WalletBackend/API.md`](WalletBackend/API.md) for complete API documentation
+
+**Status:** ✅ **Implemented**
 
 ---
 
@@ -147,21 +151,23 @@ This UI demonstrates user-controlled identity in SSI.
 
 ### 🟫 5. VERIFIER BACKEND
 
-**Responsibilities:**
+**Purpose:** Acts as a service provider that requests and verifies user credentials.
 
-- ✔ Requests only required attributes (e.g., over18, panLast4)
-- ✔ Receives Verifiable Presentation (VP)
-- ✔ Validates:
-  - `issuerSignature` - Verifies issuer's signature
-  - `backendSignature` - Verifies wallet's signature
-  - `isIssuerTrusted` - Checks issuer trust status on blockchain
-  - `isCredentialIssued` - Verifies credential existence
-  - `isCredentialRevoked` - Checks revocation status
-- ✔ Displays "Verification Success / Failure"
+**Key Features:**
 
-This completes the trust triangle: **Issuer → Holder → Verifier**
+- Sends proof requests to wallet backend
+- Polls for user responses
+- Receives Verifiable Presentations (VPs)
+- Performs comprehensive VP verification:
+  - Backend signature verification
+  - Issuer signature verification
+  - On-chain trust, issuance, and revocation checks
 
-**Status:** *Planned / To be implemented*
+**Default Port:** `5003`
+
+**Documentation:** See [`Verifier/API.md`](Verifier/API.md) for complete API documentation
+
+**Status:** ✅ **Implemented**
 
 ---
 
@@ -181,24 +187,40 @@ This completes the trust triangle: **Issuer → Holder → Verifier**
 User → Issuer /issue → VC (signed) → Blockchain stores hash
 ```
 
-### 2. User Stores VC
+### 2. User Stores VC in Wallet
 ```
-VC → Wallet Backend
+VC → Wallet Backend /store-credential
+Wallet validates: hash, issuer signature, on-chain status
+VC stored locally in storage.json
 ```
 
 ### 3. Verifier Requests Proof
 ```
-Verifier → Wallet Backend → Wallet UI popup
+Verifier /send-request → Wallet Backend /request-proof
+Wallet creates pending request
 ```
 
-### 4. User Approves
+### 4. User Approves (via Wallet UI or direct API call)
 ```
-Wallet Backend → Derives claim → Signs VP → Sends VP
+Wallet Backend /respond (approve: true)
+→ Auto-selects matching credential
+→ Validates on-chain status
+→ Derives requested attributes
+→ Creates and signs VP
+→ Returns VP
 ```
 
-### 5. Verifier Validates
+### 5. Verifier Polls for Response
 ```
-VP + Blockchain → Valid / Invalid
+Verifier /poll-request/:id → Wallet Backend /requests/:id
+Receives VP if approved
+```
+
+### 6. Verifier Validates VP
+```
+Verifier /verify-vp
+Validates: backend signature, issuer signature, on-chain checks
+Returns: Verification success/failure
 ```
 
 ---
@@ -262,20 +284,65 @@ VP + Blockchain → Valid / Invalid
    npm install
    ```
 
-5. **Configure Environment Variables**
+5. **Setup Wallet Backend**
+   ```bash
+   cd ../WalletBackend
+   npm install
+   ```
+   
+   Create a `.env` file (optional, defaults will be used):
+   ```env
+   PORT=5002
+   ```
+
+6. **Setup Verifier Backend**
+   ```bash
+   cd ../Verifier
+   npm install
+   ```
+   
+   Create a `.env` file (optional):
+   ```env
+   PORT=5003
+   WALLET_BACKEND_URL=http://localhost:5002
+   ```
+
+7. **Configure Issuer Environment Variables**
    Create a `.env` file in the `Issuer/` directory:
    ```env
    PORT=5001
    ISSUER_ADMIN_KEY=your-secret-admin-key
    ```
 
-6. **Generate Issuer Keys**
+8. **Generate Issuer Keys**
    ```bash
+   cd ../Issuer
    node issuerKeys.js
    ```
 
-7. **Start Issuer Service**
+9. **Start All Services**
+   
+   **Terminal 1 - Blockchain:**
    ```bash
+   cd Contracts
+   npx hardhat node  # Keep running
+   ```
+   
+   **Terminal 2 - Issuer Service:**
+   ```bash
+   cd Issuer
+   node index.js
+   ```
+   
+   **Terminal 3 - Wallet Backend:**
+   ```bash
+   cd WalletBackend
+   node index.js
+   ```
+   
+   **Terminal 4 - Verifier Backend:**
+   ```bash
+   cd Verifier
    node index.js
    ```
 
@@ -285,36 +352,25 @@ VP + Blockchain → Valid / Invalid
    ```bash
    cd Issuer
    node tests/testIssuer.js
-   node testCredentialIssued.js
+   node tests/testCredentialIssued.js
    ```
 
 ---
 
-## 📖 Usage Examples
+## 📖 API Documentation
 
-### Issue a Credential
+Detailed API documentation with request/response examples for each service:
 
-```bash
-curl -X POST http://localhost:5001/issue \
-  -H "Content-Type: application/json" \
-  -H "x-admin-key: your-secret-admin-key" \
-  -d '{
-    "name": "John Doe",
-    "dob": "1990-01-01",
-    "pan": "ABCDE1234F"
-  }'
-```
+- **Issuer Backend:** [`Issuer/API.md`](Issuer/API.md)
+- **Wallet Backend:** [`WalletBackend/API.md`](WalletBackend/API.md)
+- **Verifier Backend:** [`Verifier/API.md`](Verifier/API.md)
 
-### Revoke a Credential
-
-```bash
-curl -X POST http://localhost:5001/revoke \
-  -H "Content-Type: application/json" \
-  -H "x-admin-key: your-secret-admin-key" \
-  -d '{
-    "credentialHash": "<credential-hash>"
-  }'
-```
+Each API documentation includes:
+- Complete endpoint descriptions
+- Request/response formats
+- cURL examples
+- Error handling
+- Authentication details
 
 ---
 
@@ -328,19 +384,35 @@ SSI/
 │   ├── scripts/
 │   │   ├── deploy.js
 │   │   └── interact.js
+│   ├── artifacts/         # Compiled contracts
+│   ├── cache/             # Hardhat cache
 │   └── hardhat.config.js
 │
 ├── Issuer/                # Issuer Backend
+│   ├── API.md            # API documentation
 │   ├── index.js          # Main server file
 │   ├── contract.js       # Smart contract interaction
 │   ├── keys.js           # Key management
+│   ├── issuerKeys.js     # Key generation script
+│   ├── issuer.json       # Generated issuer keys
 │   └── tests/            # Test files
+│       ├── testIssuer.js
+│       └── testCredentialIssued.js
 │
-├── Wallet/                # Wallet Backend (Planned)
+├── WalletBackend/         # Wallet Backend ✅ Implemented
+│   ├── API.md            # API documentation
+│   ├── index.js          # Main server file
+│   ├── contract.js       # Smart contract interaction
+│   ├── walletKeys.js     # Wallet key management
+│   ├── wallet.json       # Generated wallet keys
+│   └── storage.json      # Credential storage (created at runtime)
 │
-├── WalletUI/              # Wallet Frontend (Planned)
+├── Verifier/              # Verifier Backend ✅ Implemented
+│   ├── API.md            # API documentation
+│   ├── index.js          # Main server file
+│   └── contract.js       # Smart contract interaction
 │
-└── Verifier/              # Verifier Backend (Planned)
+└── README.md              # This file
 ```
 
 ---
@@ -358,9 +430,9 @@ SSI/
 
 - [x] Blockchain Layer (Smart Contract)
 - [x] Issuer Backend
-- [ ] Wallet Backend
+- [x] Wallet Backend
 - [ ] Wallet UI
-- [ ] Verifier Backend
+- [x] Verifier Backend
 - [ ] Integration Testing
 - [ ] Production Deployment Guide
 
