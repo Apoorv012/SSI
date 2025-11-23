@@ -143,13 +143,21 @@ button {
   transition: all 0.3s ease;
 }
 
+.pending-req-menu-number {
+  padding: 1px 5px !important;
+}
+
+.transaction-history-status-text {
+  padding: 1px 5px !important;
+}
+
 /* ===== CARD STYLES ===== */
 .card,
 .bg-gradient-to-br {
-  margin-bottom: 24px !important;
-  padding: 28px !important;
+  /* margin-bottom: 24px !important; */
+  /* padding: 28px !important; */
   border-radius: 16px;
-  display: block;
+  /* display: block; */
 }
 
 /* ===== GRID SPACING ===== */

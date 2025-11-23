@@ -151,7 +151,7 @@ export default function WalletApp() {
       rejected: "bg-red-500/20 text-red-400 border-red-500/30",
     };
     return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${styles[status as keyof typeof styles] || styles.pending}`}>
+      <span className={`transaction-history-status-text px-2 py-1 text-xs font-semibold rounded-full border ${styles[status as keyof typeof styles] || styles.pending}`}>
         {status.toUpperCase()}
       </span>
     );
@@ -251,7 +251,7 @@ export default function WalletApp() {
           >
             <span>Pending Requests</span>
             {pendingRequests.length > 0 && (
-              <span className="ml-2 px-3 py-1 bg-red-500/30 text-red-300 rounded-full text-xs font-bold border border-red-500/50">
+              <span className="pending-req-menu-number bg-red-500/30 text-red-300 rounded-full text-xs font-bold border border-red-500/50">
                 {pendingRequests.length}
               </span>
             )}
@@ -303,8 +303,8 @@ export default function WalletApp() {
                           Issued {formatTime(cred.storedAt)}
                         </p>
                       </div>
-                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center font-bold text-2xl text-white shadow-lg shadow-purple-500/50 ml-4">
-                        {cred.vc.name.charAt(0)}
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center font-bold text-2xl text-white shadow-lg shadow-purple-500/50 ml-4">
+                      <p className="text-center w-full">{cred.vc.name.charAt(0)}</p>
                       </div>
                     </div>
                     
